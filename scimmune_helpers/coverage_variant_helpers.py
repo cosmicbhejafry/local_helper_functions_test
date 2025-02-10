@@ -88,32 +88,61 @@ def add_col_from_df(input_df,df_val,new_col_name,mapping_key,col_to_map,is_df_pa
     # return input_df, [new_col_name]
     return input_df
 
-def pcr_filtering_snv(variant_df,donor_key,mut_key,hf_key,pcr_hf_thresh=0.3,group_filter_key='mutant_type',group_filter_val='Cryptic'):
+def pcr_filtering_snv(variant_df,donor_key,mut_key,hf_key,pcr_hf_thresh=0.3,only_cryptic=False):
+
+    # 
 
     # filter for SNVs first:     
     variants_snv = variant_df[variant_df.apply(lambda row: len(row['REF']) == 1 and len(row['ALT']) == 1, axis=1)]
-    
     variants_snv['donor_MUT'] = variants_snv[donor_key] + '_' + variants_snv[mut_key]
 
-    # PCR filtering - OUTDATED: using the median hf
+    if only_cryptic == True:
+        # PCR filtering - only filter cryptics below 30% 
+        group_filter_key='mutant_type'
+        group_filter_val='Cryptic'
+        variants_snv = variants_snv[~((variants_snv[group_filter_key]==group_filter_val) & (variants_snv['HF']<pcr_hf_thresh))]
+    
+    else:
+        # DEFAULT: filter by max
+        # for each donor,MUT pair --> filter mut if the max heteroplasmy is less than 30%
+        unique_muts = variants_snv.groupby([donor_key,mut_key,'donor_MUT']).max(numeric_only=True).reset_index()
+        filtered_muts_pcr = unique_muts[unique_muts[hf_key]>=pcr_hf_thresh]
+        variants_snv = variants_snv[variants_snv['donor_MUT'].isin(filtered_muts_pcr['donor_MUT'])]
+
+    return variants_snv
+
+    # PCR filtering - OUTDATED: using the median h0f 
+    # -- Assumes cells with same heteroplasmy being sampled --> basically wrong!!
     # unique_muts = variants_snv.groupby([donor_key,mut_key,'donor_MUT']).median(numeric_only=True).reset_index()
     # filtered_muts_pcr = unique_muts[unique_muts[hf_key]>=pcr_hf_thresh]
     # variants_snv = variants_snv[variants_snv['donor_MUT'].isin(filtered_muts_pcr['donor_MUT'])]
 
-    # PCR filtering - only filter cryptics below 30% 
-    variants_snv = variants_snv[~((variants_snv[group_filter_key]==group_filter_val) & (variants_snv['HF']<pcr_hf_thresh))]
-
-    return variants_snv
-
-def add_hhlp_col(variant_df,group_mut_key,prev_key,hf_key='HF',hf_thresh=0.3,prev_thresh=0.01):
+def add_hhlp_col(variant_df,group_mut_key,prev_key,hf_key='HF',hf_thresh=0.3,prev_thresh=0.01,cell_bc_key='cell_id'):
     
     ## modify 
-    unique_muts = variant_df.groupby(group_mut_key).median(numeric_only=True)
-    
-    unique_muts_hhlp = unique_muts[(unique_muts[hf_key]>=hf_thresh) & (unique_muts[prev_key]<=prev_thresh)].copy()
 
-    added_col = f'hhlp_{hf_thresh}_{prev_thresh}'
-    variant_df[added_col] = variant_df[group_mut_key].isin(unique_muts_hhlp.index)
-    
-    # return variant_df, [added_col]
+    hhlp_type = f'hhlp_{hf_thresh}_{prev_thresh}'
+    hhlp_true_false = f'hhlp_{hf_thresh}_{prev_thresh}_bool'
+
+    # map cells with LP mutation to the max heteroplasmy of LP mut in that cell
+    cell_highest_hf_map = variant_df[variant_df[prev_key]<=prev_thresh].groupby(cell_bc_key)[hf_key].apply(max)
+    cell_highest_hf_map = cell_highest_hf_map.reset_index()
+
+    # cell has hhlp if max heteroplasmy is more than 30%
+    cell_highest_hf_map['LP_type'] = cell_highest_hf_map[hf_key].map(lambda v : 'HH-LP' if v>hf_thresh else 'LH-LP')
+
+    # map cell barcodes to HH-LP or LH-LP
+    cell_lp_dct = cell_highest_hf_map.set_index(cell_bc_key)['LP_type'].to_dict()
+
+    # save whether cell has HHLP, LHLP or None
+    variant_df[hhlp_type] = variant_df[cell_bc_key].map(cell_lp_dct).fillna('None')
+
+    # True if cell has HHLP, False if not
+    variant_df[hhlp_true_false] = variant_df[hhlp_type].map(lambda v : True if v in ['HH-LP'] else False)
+
     return variant_df
+
+    # outdated:
+    # variant_df[added_col] = variant_df[group_mut_key].isin(unique_muts_hhlp.index)
+    # unique_muts = variant_df.groupby(group_mut_key).median(numeric_only=True)    
+    # unique_muts_hhlp = unique_muts[(unique_muts[hf_key]>=hf_thresh) & (unique_muts[prev_key]<=prev_thresh)].copy()
