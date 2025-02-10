@@ -37,13 +37,13 @@ def add_grouped_prevalence(variant_df,group_pos_dict,group_key,ct_key,donor_key=
 #     added_col_names = []
 
     variant_df[f'{group_key}_POS'] =  variant_df[group_key].astype(str)+'_'+variant_df[pos_key].astype(str)
-    added_col_names.append(f'{group_key}_POS')
+    # added_col_names.append(f'{group_key}_POS')
 
     variant_df[f'cells_possible_{depth_thr}_{group_key}'] = variant_df[f'{group_key}_POS'].map(group_pos_dict)
-    added_col_names.append(f'cells_possible_{depth_thr}_{group_key}')
+    # added_col_names.append(f'cells_possible_{depth_thr}_{group_key}')
 
     variant_df[f'{group_key}_mut'] = variant_df[group_key].astype(str) + '_'+variant_df['MUT']
-    added_col_names.append(f'{group_key}_mut')
+    # added_col_names.append(f'{group_key}_mut')
 
     num_cells_with_mut = variant_df.groupby(f'{group_key}_mut').count()[cell_key]
     num_cells_possible = variant_df.groupby(f'{group_key}_mut').mean(numeric_only=True)[f'cells_possible_{depth_thr}_{group_key}']
@@ -58,7 +58,6 @@ def add_grouped_prevalence(variant_df,group_pos_dict,group_key,ct_key,donor_key=
                     
     # variant_df = variant_df.drop(['group_mut','group_POS'],axis=1)
     
-    # return variant_df, added_col_names
     return variant_df
 
 def add_col_from_dict(input_df,dict_val,new_col_name,mapping_key,is_dict_path=True,fill_na_key='NA'):
