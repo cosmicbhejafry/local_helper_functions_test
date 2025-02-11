@@ -145,3 +145,7 @@ def add_hhlp_col(variant_df,group_mut_key,prev_key,hf_key='HF',hf_thresh=0.3,pre
     # variant_df[added_col] = variant_df[group_mut_key].isin(unique_muts_hhlp.index)
     # unique_muts = variant_df.groupby(group_mut_key).median(numeric_only=True)    
     # unique_muts_hhlp = unique_muts[(unique_muts[hf_key]>=hf_thresh) & (unique_muts[prev_key]<=prev_thresh)].copy()
+
+def dataframe_to_dict(input_df,dict_key_col,dict_val_col):
+    # would be good to add tests - TODO
+    return input_df[[dict_key_col,dict_val_col]].set_index(dict_key_col).to_dict()[dict_val_col]
