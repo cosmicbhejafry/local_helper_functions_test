@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 
 def get_pos_cell_passing_dict(coverage_df,group_key,cell_key,is_list=False,depth_thr=10,start_pos=1,end_pos=16569):
     
@@ -119,12 +120,13 @@ def pcr_filtering_snv(variant_df,donor_key,mut_key,hf_key,pcr_hf_thresh=0.3,only
 def add_hhlp_col(variant_df,group_mut_key,prev_key,hf_key='HF',hf_thresh=0.3,prev_thresh=0.01,cell_bc_key='cell_id'):
     
     ## modify 
+    # If using pandas groupby().apply(max), switch to groupby().agg(max) for better performance.
 
     hhlp_type = f'hhlp_{hf_thresh}_{prev_thresh}'
     hhlp_true_false = f'hhlp_{hf_thresh}_{prev_thresh}_bool'
 
     # map cells with LP mutation to the max heteroplasmy of LP mut in that cell
-    cell_highest_hf_map = variant_df[variant_df[prev_key]<=prev_thresh].groupby(cell_bc_key)[hf_key].apply(max)
+    cell_highest_hf_map = variant_df[variant_df[prev_key]<=prev_thresh].groupby(cell_bc_key)[hf_key].apply(np.maximum.reduce)
     cell_highest_hf_map = cell_highest_hf_map.reset_index()
 
     # cell has hhlp if max heteroplasmy is more than 30%
@@ -149,3 +151,18 @@ def add_hhlp_col(variant_df,group_mut_key,prev_key,hf_key='HF',hf_thresh=0.3,pre
 def dataframe_to_dict(input_df,dict_key_col,dict_val_col):
     # would be good to add tests - TODO
     return input_df[[dict_key_col,dict_val_col]].set_index(dict_key_col).to_dict()[dict_val_col]
+
+
+def add_true_cryptic_col(variant_df,group_mut_key,prev_key,hf_key='HF',hf_thresh=0.3,prev_thresh=0.01,cell_bc_key='cell_id'):
+    
+    ## modify 
+    # If using pandas groupby().apply(max), switch to groupby().agg(max) for better performance.
+    
+    hhlp_type = f'tc_{hf_thresh}_{prev_thresh}'
+    hhlp_true_false = f'tc_{hf_thresh}_{prev_thresh}_bool'
+
+    # list of high heteroplasmy cryptic mutations:
+    
+    # for each cell: if the cell has a high heteroplasmy cryptic mutation then 'HH-TC'
+
+    return variant_df
