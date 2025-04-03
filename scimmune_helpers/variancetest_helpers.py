@@ -183,16 +183,28 @@ def distributionTest_bootstrapParams_twoGroup(boot_params_dict,grp0_key,grp1_key
 
 def add_diff_to_pval_df(pval_df,df,group_key,grp1,grp2):
 
+    returndict = find_diff_in_group_per_gene(df,group_key,grp1,grp2,bootstrap=True)
+
+    for kv in returndict.keys():
+        pval_df[kv] = pval_df.index.map(returndict[kv])
+
+    return pval_df
+
+def find_diff_in_group_per_gene(df,group_key,grp1,grp2,bootstrap=True):
+    # assumes two groups
+
+    # works for both bootstrap and non-bootstrap
     df_diff = df.pivot(index='name', columns=group_key)
 
     diff_func = lambda colval : df_diff[(colval,grp1)] - df_diff[(colval,grp2)]
-    boot_col = lambda i,qv : f'bootstrap_param{i}_{qv}_quantile'
-    interval_overlap = lambda low_vals,high_vals : df_diff[boot_col(0,0.75)].min(axis=1) - df_diff[boot_col(0,0.25)].max(axis=1)
 
-    iqr_olp = interval_overlap(df_diff[boot_col(0,0.25)],df_diff[boot_col(0,0.75)])
+    return_dict = {'param0_diff' : diff_func('param0_val'), 'param1_diff' : diff_func('param1_val')}
 
-    pval_df['param0_diff'] = pval_df.index.map(diff_func('param0_val'))
-    pval_df['param1_diff'] = pval_df.index.map(diff_func('param1_val'))
-    pval_df['iqr_overlap'] = pval_df.index.map(iqr_olp)    
-    
-    return pval_df
+    if bootstrap:
+        boot_col = lambda i,qv : f'bootstrap_param{i}_{qv}_quantile'
+        interval_overlap = lambda low_vals,high_vals : df_diff[boot_col(0,0.75)].min(axis=1) - df_diff[boot_col(0,0.25)].max(axis=1)
+        iqr_olp = interval_overlap(df_diff[boot_col(0,0.25)],df_diff[boot_col(0,0.75)])
+
+        return_dict.update({'iqr_overlap':iqr_olp})
+
+    return return_dict
