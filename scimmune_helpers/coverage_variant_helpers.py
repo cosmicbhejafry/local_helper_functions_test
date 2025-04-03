@@ -33,7 +33,7 @@ def get_pos_cell_passing_dict(coverage_df,group_key,cell_key,is_list=False,depth
         
         return {f'{batch_ct}_{pos}' : val for pos, batch_val in tmp_cov_dict.items() for batch_ct, val in batch_val.items()}
         
-def add_grouped_prevalence(variant_df,group_pos_dict,group_key,ct_key,donor_key='donor_id',pos_key='POS',cell_key='cell_id',depth_thr=10):
+def add_grouped_prevalence(variant_df,group_pos_dict,group_key,ct_key,cell_key='cell_id',pos_key='POS',depth_thr=10):
     
 #     added_col_names = []
 
@@ -93,8 +93,10 @@ def pcr_filtering_snv(variant_df,donor_key,mut_key,hf_key,pcr_hf_thresh=0.3,only
     # 
 
     # filter for SNVs first:     
-    variants_snv = variant_df[variant_df.apply(lambda row: len(row['REF']) == 1 and len(row['ALT']) == 1, axis=1)]
+    variants_snv = variant_df[variant_df.apply(lambda row: len(row['REF']) == 1 and len(row['ALT']) == 1, axis=1)].copy()
+    
     variants_snv['donor_MUT'] = variants_snv[donor_key] + '_' + variants_snv[mut_key]
+#     variants_snv.loc[:, 'donor_MUT'] = variants_snv['sample_id'] + '_' + variants_snv['MUT']
 
     if only_cryptic == True:
         # PCR filtering - only filter cryptics below 30% 
@@ -126,7 +128,7 @@ def add_hhlp_col(variant_df,group_mut_key,prev_key,hf_key='HF',hf_thresh=0.3,pre
     hhlp_true_false = f'hhlp_{hf_thresh}_{prev_thresh}_bool'
 
     # map cells with LP mutation to the max heteroplasmy of LP mut in that cell
-    cell_highest_hf_map = variant_df[variant_df[prev_key]<=prev_thresh].groupby(cell_bc_key)[hf_key].apply(np.maximum.reduce)
+    cell_highest_hf_map = variant_df[variant_df[prev_key]<=prev_thresh].groupby(cell_bc_key)[hf_key].apply(np.maximum.reduce)    
     cell_highest_hf_map = cell_highest_hf_map.reset_index()
 
     # cell has hhlp if max heteroplasmy is more than 30%
@@ -155,8 +157,7 @@ def dataframe_to_dict(input_df,dict_key_col,dict_val_col):
 
 def add_true_cryptic_col(variant_df,group_mut_key,prev_key,hf_key='HF',hf_thresh=0.3,prev_thresh=0.01,cell_bc_key='cell_id'):
     
-    ## modify 
-    # If using pandas groupby().apply(max), switch to groupby().agg(max) for better performance.
+    ## TODO 
     
     hhlp_type = f'tc_{hf_thresh}_{prev_thresh}'
     hhlp_true_false = f'tc_{hf_thresh}_{prev_thresh}_bool'
