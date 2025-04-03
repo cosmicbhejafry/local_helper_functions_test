@@ -108,9 +108,9 @@ def varianceParams_oneGroup_oneGene(h5_obj,obs_mask,gene_name,bootstrap=True,par
 
     res_dict = {'num_nz' : num_nz,'parametrization' : parametrization}
 
-    res_dict.update({f'params{i}' : res1.params[i] for i in range(num_params)})
+    res_dict.update({f'param{i}_val' : res1.params[i] for i in range(num_params)})
 
-    res_dict.update({f'bse{i}' : res1.bse[i] for i in range(num_params)})    
+    res_dict.update({f'param{i}_bse' : res1.bse[i] for i in range(num_params)})    
 
     if bootstrap:
         boot_outs = res1.bootstrap()
