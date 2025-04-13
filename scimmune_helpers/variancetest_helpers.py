@@ -102,7 +102,7 @@ def varianceParams_oneGroup_oneGene(h5_obj,obs_mask,gene_name,bootstrap=True,par
     if parametrization=='dispersion':
         mod1 = NBin_disp(count_data)
                
-    res1 = mod1.fit()
+    res1 = mod1.fit(disp=0)
 
     num_params = len(res1.params)
 
@@ -118,7 +118,7 @@ def varianceParams_oneGroup_oneGene(h5_obj,obs_mask,gene_name,bootstrap=True,par
         for i in range(num_params):
             
             for qv in [0.25,0.5,0.75]:
-                res_dict[f'bootstrap_param{i}_{qv}_quantile'] = np.quantile(boot_outs[2][:,0],qv)                
+                res_dict[f'bootstrap_param{i}_{qv}_quantile'] = np.quantile(boot_outs[2][:,i],qv)                
 
             res_dict[f'bootstrap_param{i}_mean'] = boot_outs[0][i]
             res_dict[f'bootstrap_param{i}_bse'] = boot_outs[1][i]
