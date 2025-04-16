@@ -106,11 +106,13 @@ def varianceParams_oneGroup_oneGene(h5_obj,obs_mask,gene_name,bootstrap=True,par
 
     num_params = len(res1.params)
 
-    res_dict = {'num_nz' : num_nz,'parametrization' : parametrization}
+    res_dict = {'num_nz' : num_nz,'parametrization' : parametrization, 'log-likelihood' : res1.llf, 'aic' : res1.aic, 'bic' : res1.bic}
 
     res_dict.update({f'param{i}_val' : res1.params[i] for i in range(num_params)})
 
     res_dict.update({f'param{i}_bse' : res1.bse[i] for i in range(num_params)})    
+
+    res_dict.update({f'param{i}_pval' : res1.pvalues[i] for i in range(num_params)})    
 
     if bootstrap:
         boot_outs = res1.bootstrap()
