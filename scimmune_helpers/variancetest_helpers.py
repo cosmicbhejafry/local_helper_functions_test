@@ -72,14 +72,14 @@ class NBin_disp(GenericLikelihoodModel):
     def nloglikeobs(self, params):
         sig = params[-1]
         mu = params[:-1]
-        ll = _ll_nb2_var(self.endog, mu, sig)
+        ll = _ll_nb2_disp(self.endog, mu, sig)
         return -ll
 
     def fit(self, start_params=None, maxiter=1000, maxfun=1000, **kwds):
         # we have one additional parameter and we need to add it for summary
         if start_params == None:
             # Reasonable starting values
-            start_params = [0.5,1.1]            
+            start_params = [0.5,1]            
 #             # intercept
 #             start_params[-2] = np.log(self.endog.mean())
         return super(NBin_disp, self).fit(start_params=start_params,
@@ -202,9 +202,11 @@ def find_diff_in_group_per_gene(df,group_key,grp1,grp2,bootstrap=True):
 
     if bootstrap:
         boot_col = lambda i,qv : f'bootstrap_param{i}_{qv}_quantile'
-        interval_overlap = lambda low_vals,high_vals : df_diff[boot_col(0,0.75)].min(axis=1) - df_diff[boot_col(0,0.25)].max(axis=1)
-        iqr_olp = interval_overlap(df_diff[boot_col(0,0.25)],df_diff[boot_col(0,0.75)])
-
-        return_dict.update({'iqr_overlap':iqr_olp})
+        #   error here!!! fix!!!    
+        interval_overlap = lambda low_vals,high_vals : high_vals.min(axis=1) - low_vals.max(axis=1)
+        iqr_olp0 = interval_overlap(df_diff[boot_col(0,0.25)],df_diff[boot_col(0,0.75)])
+        iqr_olp1 = interval_overlap(df_diff[boot_col(1,0.25)],df_diff[boot_col(1,0.75)])
+        
+        return_dict.update({'iqr_overlap0':iqr_olp0, 'iqr_overlap1' : iqr_olp1})
 
     return return_dict
