@@ -53,8 +53,8 @@ def get_p_disp(mu,disp):
 def get_success_disp(mu,disp):
     return 1.0/disp
 
-def get_mu(p,success):
-    return success*(1.0 - p)/p
+# def get_mu(p,success):
+#     return success*(1.0 - p)/p
 
 def get_disp(p,success):
     return 1/success
@@ -127,6 +127,9 @@ def varianceParams_oneGroup_oneGene(h5_obj,obs_mask,gene_name,bootstrap=True,par
         
             res_dict[f'bootstrap_param{i}_vals'] = boot_outs[2][:,i]            
             res_dict[f'bootstrap_param{i}_nans'] = np.isnan(boot_outs[2][:,i]).sum()        
+
+            res_dict[f'bootstrap_param{i}_min'] = np.min(boot_outs[2][:,i])            
+            res_dict[f'bootstrap_param{i}_max'] = np.max(boot_outs[2][:,i])        
         
     return res_dict
 
