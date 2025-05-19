@@ -137,7 +137,7 @@ def find_smd_all_covs(input_df,group_key,covs_lst):
     return pd.concat(smd_results,axis=1).T
 
 
-def find_pval_per_sample(df_with_sample1,downsample_lens_lst1,grp_key,grp_sample_to,col_lst,num_sample,test_type):
+def find_pval_per_sample(df_with_sample1,downsample_lens_lst1,grp_key,grp_sample_to,col_lst,num_sample,test_type,apply_corr=True):
 
     dict_lens_pvals_s_ns = {}
 
@@ -160,7 +160,10 @@ def find_pval_per_sample(df_with_sample1,downsample_lens_lst1,grp_key,grp_sample
                 else:
                     statval = stats.mannwhitneyu(data1,data2,alternative='two-sided')    
 
-                pv = statval[1]
+                pv = statval[1]                
+                if apply_corr==True:
+                    pv = np.clip(0,1,pv*num_sample)
+
                 pval_dict[kv].append(pv)
 
         dict_lens_pvals_s_ns[len_tot] = pval_dict
