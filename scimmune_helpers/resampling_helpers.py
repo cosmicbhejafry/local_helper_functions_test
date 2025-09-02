@@ -13,6 +13,70 @@ def resample_group_many(df, group_key,group_to_sample, columns_to_balance, bins=
     
     return temp_df
 
+def resample_group_one_donor(df, group_key, group_to_sample, columns_to_balance, bins=10,len_sample=None,iter_num=0):
+    """
+    Perform importance sampling on `group_to_sample` to match the distribution of other group based on multiple columns.
+
+    Parameters:
+    - df (pd.DataFrame): Input DataFrame.
+    - group_key (str): Column name dividing the data into two groups.
+    - columns_to_balance (list): List of column names to balance the groups over.
+    - bins (int or list): Number of bins for histograms (default is 10, or specify a list for each dimension).
+
+    Returns:
+    - pd.DataFrame: Resampled group_1 DataFrame that matches the distribution of group_2.
+    """
+    # Separate the groups
+    assert df[group_key].nunique()==2
+    
+    group_1 = df[df[group_key] == group_to_sample]
+    group_2 = df[df[group_key] != group_to_sample]
+
+    # Extract the columns to balance
+    group_1_data = group_1[columns_to_balance].values
+    group_2_data = group_2[columns_to_balance].values
+    
+    group_all_data = df[columns_to_balance].values
+    
+    # Compute multidimensional histograms
+    hist_all, edges_all = np.histogram(group_all_data,bins=bins,density=True)
+    
+    hist_1, edges = np.histogram(group_1_data, bins=edges_all, density=True)
+    hist_2, _ = np.histogram(group_2_data, bins=edges_all, density=True)
+    
+    # Add small epsilon to avoid division by zero
+#     hist_all += 1e-20   
+    hist_1 += 1e-20
+    hist_2 += 1e-20
+
+    # Compute importance weights for group_1 using inverse density of group_2
+    group_1_weights = np.ones(len(group_1))
+    
+    bin_wts = np.nan_to_num(hist_2/hist_1)
+
+    # Get bin indices for group_1 data
+    group_1_indices = np.digitize(group_1_data, edges_all[:-1])-1
+    
+    bin_value = [bin_wts[v] for v in group_1_indices]
+    # print(len(bin_value))
+    
+    group_1_weights *= bin_value
+
+    # Normalize weights for resampling
+    group_1_weights /= np.sum(group_1_weights)
+
+    if len_sample ==None:
+        len_sample1= len(group_2)
+    else:
+        len_sample1 = len_sample
+        
+    # Resample g-roup_1 based on computed weights
+    sampled_group_1 = group_1.sample(n=len_sample1, weights=group_1_weights, replace=False)
+
+    df[f'sample_{iter_num}_{len_sample1}'] = df.index.map(lambda v : True if v in sampled_group_1.index else False)
+    
+    return df
+
 def resample_group_one(df, group_key, group_to_sample, columns_to_balance, bins=10,len_sample=None,iter_num=0):
     """
     Perform importance sampling on `group_to_sample` to match the distribution of other group based on multiple columns.
