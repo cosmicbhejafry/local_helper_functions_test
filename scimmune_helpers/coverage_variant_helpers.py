@@ -427,9 +427,13 @@ def add_hhlp_cols_h5(filtered_h5,variants_snv,cid_h5,cid_cov,patho_key='MutPred_
         # for each cell -- set of HHLP types within it
         cell_hhlp_set = vars_type_hhlp.groupby(cid_cov)[s_ns_key].apply(set)
 
-        other_muts_key = 'Many Types'
+        # other_muts_key = 'Many Types'
+        # cell_hhlp_labels = cell_hhlp_set.map(lambda v : str(min(v)) if len(v)==1 else other_muts_key)
+        # cell_hhlp_labels = cell_hhlp_labels.reset_index().copy()        
 
-        cell_hhlp_labels = cell_hhlp_set.map(lambda v : str(min(v)) if len(v)==1 else other_muts_key)
+        other_muts_key = 'Other'
+        ns_muts_key = 'Non-Synonymous'
+        cell_hhlp_labels = cell_hhlp_set.map(lambda v : ns_muts_key if ns_muts_key in v else other_muts_key)
         cell_hhlp_labels = cell_hhlp_labels.reset_index().copy()        
 
         # for each cell -- set of pathogenicities within it
